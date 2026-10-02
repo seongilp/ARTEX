@@ -17,8 +17,10 @@ const maxChatMentions = 10
 
 // The visible token survives drafts, uploads, retries and conversation history.
 // Labels are only for display: the server trusts only the type and numeric ID.
-var chatMentionPattern = regexp.MustCompile(`@\[(漏洞|资产|企业|接口|IP|应用|域名|子域名|服务)#([0-9]+)(?: [^\]\r\n]*)?\]`)
+var chatMentionPattern = regexp.MustCompile(`@\[(취약점|자산|기업|API|IP|애플리케이션|도메인|하위 도메인|서비스|漏洞|资产|企业|接口|应用|域名|子域名|服务)#([0-9]+)(?: [^\]\r\n]*)?\]`)
 var chatMentionKinds = map[string]string{
+	"취약점": "finding", "자산": "asset", "기업": "company", "API": "endpoint",
+	"애플리케이션": "app", "도메인": "root_domain", "하위 도메인": "subdomain", "서비스": "service",
 	"漏洞": "finding", "资产": "asset", "企业": "company", "接口": "endpoint",
 	"IP": "ip", "应用": "app", "域名": "root_domain", "子域名": "subdomain", "服务": "service",
 }
@@ -39,7 +41,7 @@ func parseChatMentions(message string) ([]chatMentionRef, error) {
 	for _, m := range chatMentionPattern.FindAllStringSubmatch(message, -1) {
 		id, err := strconv.ParseInt(m[2], 10, 64)
 		if err != nil || id <= 0 {
-			return nil, &chatMentionInputError{"引用 ID 无效，请重新选择"}
+			return nil, &chatMentionInputError{"참조 ID가 올바르지 않습니다. 다시 선택하세요"}
 		}
 		kind := chatMentionKinds[m[1]]
 		key := kind + ":" + strconv.FormatInt(id, 10)
@@ -49,7 +51,7 @@ func parseChatMentions(message string) ([]chatMentionRef, error) {
 		seen[key] = true
 		refs = append(refs, chatMentionRef{kind, id, m[1]})
 		if len(refs) > maxChatMentions {
-			return nil, &chatMentionInputError{"每条消息最多引用 10 条记录"}
+			return nil, &chatMentionInputError{"메시지당 최대 10개 기록을 참조할 수 있습니다"}
 		}
 	}
 	return refs, nil
@@ -58,7 +60,7 @@ func parseChatMentions(message string) ([]chatMentionRef, error) {
 func (s *Server) searchChatMentions(w http.ResponseWriter, r *http.Request) {
 	kind, query := r.URL.Query().Get("kind"), strings.TrimSpace(r.URL.Query().Get("q"))
 	if (kind != "" && !db.ValidChatMentionKind(kind)) || utf8.RuneCountInString(query) > 200 {
-		writeErr(w, 400, "引用类型无效或搜索关键词超过 200 字")
+		writeErr(w, 400, "인용 유형이 유효하지 않거나 검색어가 200자를 초과했습니다")
 		return
 	}
 	pg := s.pg(w)
@@ -100,7 +102,7 @@ func composeChatMentionMessage(pg *db.DB, message string) (string, error) {
 		return message, err
 	}
 	if pg == nil {
-		return "", errors.New("引用数据暂不可用")
+		return "", errors.New("참조 데이터를 사용할 수 없습니다")
 	}
 	var b strings.Builder
 	b.WriteString(message)
@@ -111,7 +113,7 @@ func composeChatMentionMessage(pg *db.DB, message string) (string, error) {
 			return "", err
 		}
 		if data == nil {
-			return "", &chatMentionInputError{fmt.Sprintf("引用的%s #%d 不存在或类型不匹配，请移除后重新选择", ref.Name, ref.ID)}
+			return "", &chatMentionInputError{fmt.Sprintf("참조한 %s #%d 항목이 없거나 유형이 다릅니다. 제거한 뒤 다시 선택하세요", ref.Name, ref.ID)}
 		}
 		blob, err := json.Marshal(data)
 		if err != nil {
@@ -130,7 +132,7 @@ func composeChatMentionMessage(pg *db.DB, message string) (string, error) {
 		}
 		fmt.Fprintf(&b, "\n%s #%d:\n%s\n", ref.Name, ref.ID, blob)
 		if b.Len() > 384<<10 {
-			return "", &chatMentionInputError{"引用内容过大，请减少引用记录后重试"}
+			return "", &chatMentionInputError{"참조 내용이 너무 큽니다. 기록 수를 줄이고 다시 시도하세요"}
 		}
 	}
 	return b.String(), nil

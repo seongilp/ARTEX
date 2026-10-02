@@ -449,7 +449,7 @@ func (s *Server) listTaskArchives(w http.ResponseWriter, r *http.Request) {
 func (s *Server) getTaskArchive(w http.ResponseWriter, r *http.Request) {
 	id, ok := pathInt(r, "id")
 	if !ok {
-		writeErr(w, 400, "归档 id 无效")
+		writeErr(w, 400, "보관 ID가 유효하지 않습니다")
 		return
 	}
 	item, err := s.m.pg.GetTaskArchive(id)
@@ -458,7 +458,7 @@ func (s *Server) getTaskArchive(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if item == nil {
-		writeErr(w, 404, "归档不存在")
+		writeErr(w, 404, "보관 항목이 없습니다")
 		return
 	}
 	writeJSON(w, 200, item)
@@ -467,7 +467,7 @@ func (s *Server) getTaskArchive(w http.ResponseWriter, r *http.Request) {
 func (s *Server) queueTaskArchive(w http.ResponseWriter, r *http.Request) {
 	id, ok := canonicalTaskID(r.PathValue("id"))
 	if !ok {
-		writeErr(w, 400, "任务 id 无效")
+		writeErr(w, 400, "작업 ID가 유효하지 않습니다")
 		return
 	}
 	numeric, _ := strconv.ParseInt(id, 10, 64)
@@ -483,7 +483,7 @@ func (s *Server) queueTaskArchive(w http.ResponseWriter, r *http.Request) {
 func (s *Server) queueTaskArchiveRestore(w http.ResponseWriter, r *http.Request) {
 	id, ok := pathInt(r, "id")
 	if !ok {
-		writeErr(w, 400, "归档 id 无效")
+		writeErr(w, 400, "보관 ID가 유효하지 않습니다")
 		return
 	}
 	item, err := s.m.pg.QueueTaskArchiveRestore(id)
@@ -498,7 +498,7 @@ func (s *Server) queueTaskArchiveRestore(w http.ResponseWriter, r *http.Request)
 func (s *Server) queueTaskArchiveDelete(w http.ResponseWriter, r *http.Request) {
 	id, ok := pathInt(r, "id")
 	if !ok {
-		writeErr(w, 400, "归档 id 无效")
+		writeErr(w, 400, "보관 ID가 유효하지 않습니다")
 		return
 	}
 	item, err := s.m.pg.QueueTaskArchiveDelete(id)
@@ -518,11 +518,11 @@ func (s *Server) queueTaskArchivesBatch(w http.ResponseWriter, r *http.Request) 
 	}
 	parsed := normalizeBatchTaskIDs(request.TaskIDs)
 	if len(parsed) == 0 {
-		writeErr(w, 400, "task_ids 不能为空")
+		writeErr(w, 400, "task_ids는 비워 둘 수 없습니다")
 		return
 	}
 	if len(parsed) > 100 {
-		writeErr(w, 400, "一次最多处理 100 个任务")
+		writeErr(w, 400, "한 번에 최대 100개 작업까지 처리할 수 있습니다")
 		return
 	}
 	ids := make([]string, 0, len(parsed))

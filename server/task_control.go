@@ -104,10 +104,10 @@ func (s *Server) applyTaskControlWithCause(t *Task, action string, pauseCause er
 		defer s.concMu.Unlock()
 		current, exists := s.m.Task(t.ID)
 		if !exists || current != t || s.engine.IsDeleting(t.ID) {
-			return out, fmt.Errorf("任务正在删除，无法控制")
+			return out, fmt.Errorf("작업 삭제 중이므로 제어할 수 없습니다")
 		}
 		if !s.engine.beginTaskOperation(t.ID) {
-			return out, fmt.Errorf("任务正在删除，无法控制")
+			return out, fmt.Errorf("작업 삭제 중이므로 제어할 수 없습니다")
 		}
 		defer s.engine.decInflight(t.ID)
 		lifecycle := t.lifecycleSnapshot()
@@ -259,7 +259,7 @@ func (s *Server) controlTasksBatch(w http.ResponseWriter, r *http.Request) {
 	}
 	taskIDs := normalizeBatchTaskIDs(req.TaskIDs)
 	if len(taskIDs) == 0 || len(taskIDs) > maxBatchControlIDs {
-		writeErr(w, 400, fmt.Sprintf("task_ids 数量必须为 1-%d", maxBatchControlIDs))
+		writeErr(w, 400, fmt.Sprintf("task_ids 개수는 1~%d개여야 합니다", maxBatchControlIDs))
 		return
 	}
 	items := make([]batchControlItem, 0, len(taskIDs))

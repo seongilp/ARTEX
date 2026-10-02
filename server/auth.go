@@ -103,11 +103,11 @@ func (s *Server) requireAuth(h http.Handler) http.Handler {
 		}
 		tok := extractToken(r)
 		if tok == "" {
-			writeErr(w, 401, "未授权")
+			writeErr(w, 401, "인증되지 않았습니다")
 			return
 		}
 		if !verifyJWT(tok, s.jwtKey) {
-			writeErr(w, 401, "token 无效或已过期")
+			writeErr(w, 401, "token이 유효하지 않거나 만료되었습니다")
 			return
 		}
 		h.ServeHTTP(w, r)
@@ -132,28 +132,28 @@ func (s *Server) authInit(w http.ResponseWriter, r *http.Request) {
 	}
 	existing, _, _ := pg.GetSetting(authPassKey)
 	if existing != "" {
-		writeErr(w, 403, "密码已设置")
+		writeErr(w, 403, "암호가 이미 설정되어 있습니다")
 		return
 	}
 	var req struct {
 		Password string `json:"password"`
 	}
 	if err := decode(r, &req); err != nil || req.Password == "" {
-		writeErr(w, 400, "密码不能为空")
+		writeErr(w, 400, "암호는 비워 둘 수 없습니다")
 		return
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		writeErr(w, 500, "密码加密失败")
+		writeErr(w, 500, "암호화에 실패했습니다")
 		return
 	}
 	if err := pg.SetSetting(authPassKey, string(hash)); err != nil {
-		writeErr(w, 500, "保存失败: "+err.Error())
+		writeErr(w, 500, "저장 실패: "+err.Error())
 		return
 	}
 	tok, err := signJWT(s.jwtKey)
 	if err != nil {
-		writeErr(w, 500, "token 生成失败")
+		writeErr(w, 500, "token 생성에 실패했습니다")
 		return
 	}
 	writeJSON(w, 200, map[string]any{"token": tok})
@@ -168,7 +168,7 @@ func (s *Server) authChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !verifyJWT(extractToken(r), s.jwtKey) {
-		writeErr(w, 401, "未授权")
+		writeErr(w, 401, "인증되지 않았습니다")
 		return
 	}
 	var req struct {
@@ -176,29 +176,29 @@ func (s *Server) authChangePassword(w http.ResponseWriter, r *http.Request) {
 		NewPassword string `json:"new_password"`
 	}
 	if err := decode(r, &req); err != nil {
-		writeErr(w, 400, "请求格式错误")
+		writeErr(w, 400, "요청 형식이 잘못되었습니다")
 		return
 	}
 	if req.NewPassword == "" {
-		writeErr(w, 400, "新密码不能为空")
+		writeErr(w, 400, "새 암호는 비워 둘 수 없습니다")
 		return
 	}
 	hash, ok, _ := pg.GetSetting(authPassKey)
 	if !ok || hash == "" {
-		writeErr(w, 403, "密码未初始化，请先设置密码")
+		writeErr(w, 403, "암호가 설정되지 않았습니다. 먼저 암호를 설정하세요")
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(req.OldPassword)); err != nil {
-		writeErr(w, 401, "当前密码错误")
+		writeErr(w, 401, "현재 암호가 올바르지 않습니다")
 		return
 	}
 	newHash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
 	if err != nil {
-		writeErr(w, 500, "密码加密失败")
+		writeErr(w, 500, "암호화에 실패했습니다")
 		return
 	}
 	if err := pg.SetSetting(authPassKey, string(newHash)); err != nil {
-		writeErr(w, 500, "保存失败: "+err.Error())
+		writeErr(w, 500, "저장 실패: "+err.Error())
 		return
 	}
 	writeJSON(w, 200, map[string]any{"ok": true})
@@ -215,25 +215,25 @@ func (s *Server) authLogin(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 	if err := decode(r, &req); err != nil {
-		writeErr(w, 400, "请求格式错误")
+		writeErr(w, 400, "요청 형식이 잘못되었습니다")
 		return
 	}
 	if req.Username != "ARTEX" {
-		writeErr(w, 401, "用户名或密码错误")
+		writeErr(w, 401, "사용자 이름 또는 암호가 올바르지 않습니다")
 		return
 	}
 	hash, ok, _ := pg.GetSetting(authPassKey)
 	if !ok || hash == "" {
-		writeErr(w, 403, "密码未初始化，请先设置密码")
+		writeErr(w, 403, "암호가 설정되지 않았습니다. 먼저 암호를 설정하세요")
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(req.Password)); err != nil {
-		writeErr(w, 401, "用户名或密码错误")
+		writeErr(w, 401, "사용자 이름 또는 암호가 올바르지 않습니다")
 		return
 	}
 	tok, err := signJWT(s.jwtKey)
 	if err != nil {
-		writeErr(w, 500, "token 生成失败")
+		writeErr(w, 500, "token 생성에 실패했습니다")
 		return
 	}
 	writeJSON(w, 200, map[string]any{"token": tok})

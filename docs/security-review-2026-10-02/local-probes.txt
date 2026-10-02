@@ -1,0 +1,9 @@
+=== RUN   TestSecurityReviewWorkspaceSymlinkProbe
+    security_review_probe_test.go:25: CONFIRMED: workspace symlink reads generated file outside root
+--- PASS: TestSecurityReviewWorkspaceSymlinkProbe (0.00s)
+=== RUN   TestSecurityReviewAuthBoundaryProbe
+    security_review_probe_test.go:36: CONFIRMED: unauthenticated cross-origin auth/init reaches handler; database state check is in handler
+    security_review_probe_test.go:40: CONFIRMED: normal API route rejects missing token
+--- PASS: TestSecurityReviewAuthBoundaryProbe (0.00s)
+PASS
+ok  	github.com/Autumn-27/artex/server	0.565s

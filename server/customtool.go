@@ -54,19 +54,19 @@ func (s *Server) pgCreateCustomTool(w http.ResponseWriter, r *http.Request) {
 	}
 	req.Key = strings.TrimSpace(req.Key)
 	if !reToolKey.MatchString(req.Key) {
-		writeErr(w, 400, "key 需小写字母开头，仅含小写字母/数字/下划线")
+		writeErr(w, 400, "key는 소문자로 시작하고 소문자, 숫자, 밑줄만 사용할 수 있습니다")
 		return
 	}
 	if req.Kind != "command" && req.Kind != "script" && req.Kind != "http" && req.Kind != "shell" {
-		writeErr(w, 400, "kind 需为 command / script / http / shell")
+		writeErr(w, 400, "kind는 command / script / http / shell 중 하나여야 합니다")
 		return
 	}
 	if req.Kind == "http" && !hasSchemaProps(req.Schema) {
-		writeErr(w, 400, "http 工具必须提供参数 JSON Schema(不能留空)")
+		writeErr(w, 400, "http 도구에는 매개변수 JSON Schema가 필요합니다(비워 둘 수 없음)")
 		return
 	}
 	if exist, _ := pg.GetTool(req.Key); exist != nil {
-		writeErr(w, 409, "该 key 已存在(内置或自定义工具)")
+		writeErr(w, 409, "이미 존재하는 key입니다(내장 또는 사용자 정의 도구)")
 		return
 	}
 	if err := pg.CreateCustomTool(&db.Tool{
@@ -91,7 +91,7 @@ func (s *Server) pgUpdateCustomTool(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if existing == nil || existing.System {
-		writeErr(w, 400, "只能编辑自定义工具")
+		writeErr(w, 400, "사용자 정의 도구만 수정할 수 있습니다")
 		return
 	}
 	var req customToolReq
@@ -100,11 +100,11 @@ func (s *Server) pgUpdateCustomTool(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Kind != "command" && req.Kind != "script" && req.Kind != "http" && req.Kind != "shell" {
-		writeErr(w, 400, "kind 需为 command / script / http / shell")
+		writeErr(w, 400, "kind는 command / script / http / shell 중 하나여야 합니다")
 		return
 	}
 	if req.Kind == "http" && !hasSchemaProps(req.Schema) {
-		writeErr(w, 400, "http 工具必须提供参数 JSON Schema(不能留空)")
+		writeErr(w, 400, "http 도구에는 매개변수 JSON Schema가 필요합니다(비워 둘 수 없음)")
 		return
 	}
 	if err := pg.UpdateCustomTool(&db.Tool{
@@ -150,7 +150,7 @@ func (s *Server) pgTestCustomTool(w http.ResponseWriter, r *http.Request) {
 	}
 	var req testToolReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeErr(w, 400, "无效的请求体")
+		writeErr(w, 400, "요청 본문이 유효하지 않습니다")
 		return
 	}
 	params := req.Params
@@ -169,10 +169,10 @@ func (s *Server) pgTestCustomTool(w http.ResponseWriter, r *http.Request) {
 	case "http":
 		res, _ = s.runHTTPTool(ctx, req.Exec, params, tc)
 	case "shell":
-		writeErr(w, 400, "shell 类型工具是 bash 环境声明，无可执行内容")
+		writeErr(w, 400, "shell 유형 도구는 bash 환경 선언이며 실행할 내용이 없습니다")
 		return
 	default:
-		writeErr(w, 400, "未知工具类型: "+req.Kind)
+		writeErr(w, 400, "알 수 없는 도구 유형: "+req.Kind)
 		return
 	}
 	writeJSON(w, 200, map[string]any{"output": res.Flatten(), "is_error": res.IsError})

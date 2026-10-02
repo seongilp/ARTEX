@@ -128,7 +128,7 @@ func (s *Server) findingTrafficAccess(w http.ResponseWriter, r *http.Request, wr
 			return 0, false
 		}
 		if write && inherited {
-			writeErr(w, 403, "继承漏洞只读，请在来源任务中修改")
+			writeErr(w, 403, "상속된 취약점은 읽기 전용입니다. 원본 작업에서 수정하세요")
 			return 0, false
 		}
 	}
@@ -171,7 +171,7 @@ func (s *Server) bindFindingTraffic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(body.Refs) == 0 {
-		writeErr(w, 400, "请选择流量")
+		writeErr(w, 400, "트래픽을 선택하세요")
 		return
 	}
 	out, err := s.evidenceStore().Bind(r.Context(), id, body.Refs)
@@ -194,14 +194,14 @@ func (s *Server) editFindingTraffic(w http.ResponseWriter, r *http.Request) {
 		Order   []string `json:"binding_ids"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&body); err != nil || body.Version == nil {
-		writeErr(w, 400, "version 和有效请求体必填")
+		writeErr(w, 400, "version과 유효한 요청 본문이 필요합니다")
 		return
 	}
 	var order []int64
 	bindingID := int64(0)
 	if r.Method == http.MethodPut {
 		if body.Order == nil {
-			writeErr(w, 400, "binding_ids 必填")
+			writeErr(w, 400, "binding_ids가 필요합니다")
 			return
 		}
 		order = []int64{}

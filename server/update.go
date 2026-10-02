@@ -279,15 +279,15 @@ func (s *Server) updateApply(w http.ResponseWriter, r *http.Request) {
 	}
 	cmp, comparable := selfupdate.CompareVersions(current, rel.TagName)
 	if !comparable {
-		writeErr(w, 400, fmt.Sprintf("当前版本 %q 不是正式发布版本，已禁用一键更新", current))
+		writeErr(w, 400, fmt.Sprintf("현재 버전 %q은(는) 정식 릴리스가 아니므로 원클릭 업데이트를 사용할 수 없습니다", current))
 		return
 	}
 	if cmp >= 0 {
-		writeErr(w, 400, fmt.Sprintf("当前已是最新版本 %s", current))
+		writeErr(w, 400, fmt.Sprintf("현재 최신 버전입니다(%s)", current))
 		return
 	}
 	if !updHub.begin(rel.TagName) {
-		writeErr(w, 409, "已有一个更新正在进行中")
+		writeErr(w, 409, "이미 업데이트가 진행 중입니다")
 		return
 	}
 
@@ -314,7 +314,7 @@ func (s *Server) updateApply(w http.ResponseWriter, r *http.Request) {
 // updateRollback 主动退回上一版本（换装前备份的 artex.old）。
 func (s *Server) updateRollback(w http.ResponseWriter, r *http.Request) {
 	if _, running := updHub.snapshot(); running {
-		writeErr(w, 409, "更新正在进行中，无法回滚")
+		writeErr(w, 409, "업데이트 진행 중에는 롤백할 수 없습니다")
 		return
 	}
 	if err := selfupdate.Rollback(); err != nil {

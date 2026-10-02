@@ -185,7 +185,7 @@ func (s *Server) syncSSProjects(w http.ResponseWriter, r *http.Request) {
 	}
 	text, err := cl.Call(ctx, "list_projects_data", args)
 	if err != nil {
-		writeErr(w, 502, "list_projects_data 失败: "+err.Error())
+		writeErr(w, 502, "list_projects_data 실패: "+err.Error())
 		return
 	}
 	// {result:{All:[{id,name,logo,AssetCount,tag}], <tag>:[...]}, tag:{...}}
@@ -194,7 +194,7 @@ func (s *Server) syncSSProjects(w http.ResponseWriter, r *http.Request) {
 		Tag    map[string]int             `json:"tag"`
 	}
 	if err := json.Unmarshal([]byte(text), &env); err != nil {
-		writeErr(w, 502, "解析项目列表失败: "+err.Error())
+		writeErr(w, 502, "프로젝트 목록을 해석하지 못했습니다: "+err.Error())
 		return
 	}
 	projects := json.RawMessage("[]")
@@ -228,14 +228,14 @@ func (s *Server) syncSSTasks(w http.ResponseWriter, r *http.Request) {
 	}
 	text, err := cl.Call(ctx, "list_tasks", args)
 	if err != nil {
-		writeErr(w, 502, "list_tasks 失败: "+err.Error())
+		writeErr(w, 502, "list_tasks 실패: "+err.Error())
 		return
 	}
 	var env struct {
 		List json.RawMessage `json:"list"`
 	}
 	if err := json.Unmarshal([]byte(text), &env); err != nil {
-		writeErr(w, 502, "解析任务列表失败: "+err.Error())
+		writeErr(w, 502, "작업 목록을 해석하지 못했습니다: "+err.Error())
 		return
 	}
 	tasks := env.List
@@ -271,11 +271,11 @@ func (s *Server) syncSSRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Dimension != "project" && req.Dimension != "task" {
-		writeErr(w, 400, "dimension 必须是 project 或 task")
+		writeErr(w, 400, "dimension은 project 또는 task여야 합니다")
 		return
 	}
 	if len(req.Targets) == 0 {
-		writeErr(w, 400, "targets 不能为空")
+		writeErr(w, 400, "targets는 비워 둘 수 없습니다")
 		return
 	}
 	if len(req.AssetTypes) == 0 {

@@ -40,6 +40,22 @@ func TestChatMentionParsing(t *testing.T) {
 	}
 }
 
+func TestChatMentionKoreanAndLegacyTokens(t *testing.T) {
+	message := "@[취약점#12 새 기록] @[漏洞#12 이전 기록] @[하위 도메인#34 example.com] @[API#56 GET /api]"
+	refs, err := parseChatMentions(message)
+	if err != nil || len(refs) != 3 {
+		t.Fatalf("mixed-language references: refs=%+v err=%v", refs, err)
+	}
+	for i, kind := range []string{"finding", "subdomain", "endpoint"} {
+		if refs[i].Kind != kind {
+			t.Fatalf("reference %d: got %q, want %q", i, refs[i].Kind, kind)
+		}
+	}
+	if _, err := parseChatMentions("@[취약점#0]"); err == nil {
+		t.Fatal("accepted invalid Korean reference ID")
+	}
+}
+
 func TestChatMentionPagination(t *testing.T) {
 	s, fid := newRetestServer(t)
 	pg := s.m.pg

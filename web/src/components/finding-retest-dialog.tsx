@@ -42,9 +42,9 @@ export function FindingRetestDialog({ findingId, findingName, onClose, onStarted
       const result = await api.startFindingRetest(findingId, notes.trim());
       onStarted?.(result.retest);
       onClose();
-      toast.success(result.created ? "复测已启动，可点击「复测中」查看会话" : "该漏洞正在复测，可查看已有会话");
+      toast.success(result.created ? "재검사가 시작되었습니다. 「재검사 중」을 클릭하면 세션을 볼 수 있습니다" : "이 취약점을 재검사 중입니다. 기존 세션을 확인할 수 있습니다");
     } catch (e) {
-      toast.error(`发起复测失败：${(e as Error).message}`);
+      toast.error(`재검사 시작 실패: ${(e as Error).message}`);
     } finally {
       submitLock.current = false;
       setSubmitting(false);
@@ -55,16 +55,15 @@ export function FindingRetestDialog({ findingId, findingName, onClose, onStarted
     <Dialog open onOpenChange={(open) => !open && !submitLock.current && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>复测漏洞 #{findingId}</DialogTitle>
+          <DialogTitle>취약점 재검사 #{findingId}</DialogTitle>
           <DialogDescription className="break-words">
             {findingName ? <span className="mb-2 block">{findingName}</span> : null}
-            复测 Agent
-            将读取原证据和测试约束，在独立会话中执行针对性验证。复测成功完成且确认修复后，漏洞状态自动改为「已修复」，其他结论保留原状态。
+            재검사 Agent 는 원래 증거와 테스트 제약을 확인한 뒤 별도 세션에서 집중 검증을 수행합니다. 재검사를 완료하고 수정 사항을 확인하면 취약점 상태가 자동으로 「수정됨」으로 바뀌며, 그 외 결론은 기존 상태로 유지됩니다。
           </DialogDescription>
         </DialogHeader>
         <FieldGroup>
           <Field data-disabled={submitting}>
-            <FieldLabel htmlFor={notesId}>补充说明（可选）</FieldLabel>
+            <FieldLabel htmlFor={notesId}>추가 설명(선택 사항)</FieldLabel>
             <Textarea
               id={notesId}
               value={notes}
@@ -72,18 +71,18 @@ export function FindingRetestDialog({ findingId, findingName, onClose, onStarted
               rows={4}
               disabled={submitting}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="例如：使用原测试账号验证原接口；修复版本为 v2。"
+              placeholder="예: 기존 테스트 계정으로 기존 API를 검증합니다. 수정 버전은 v2입니다."
             />
-            <FieldDescription>可补充修复版本、测试条件或本次限制。</FieldDescription>
+            <FieldDescription>수정 버전, 테스트 조건 또는 이번 검사의 제한 사항을 추가할 수 있습니다。</FieldDescription>
           </Field>
         </FieldGroup>
         <DialogFooter>
           <Button variant="outline" disabled={submitting} onClick={onClose}>
-            取消
+            취소
           </Button>
           <Button disabled={submitting} onClick={() => void start()}>
             {submitting ? <Spinner data-icon="inline-start" /> : <RotateCcwIcon data-icon="inline-start" />}
-            {submitting ? "正在创建…" : "开始复测"}
+            {submitting ? "만드는 중…" : "재검사 시작"}
           </Button>
         </DialogFooter>
       </DialogContent>

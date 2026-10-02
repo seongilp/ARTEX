@@ -67,7 +67,7 @@ var reAgentKey = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
 // pgReady returns the PG handle, or writes 503 and returns nil if unavailable.
 func (s *Server) pg(w http.ResponseWriter) *db.DB {
 	if s.m.pg == nil {
-		writeErr(w, 503, "管理后台数据源(PostgreSQL)未连接")
+		writeErr(w, 503, "관리자 데이터 소스(PostgreSQL)가 연결되지 않았습니다")
 		return nil
 	}
 	return s.m.pg
@@ -133,7 +133,7 @@ func (s *Server) abortTaskDelete(taskID string) {
 func (s *Server) pgDeleteTask(w http.ResponseWriter, r *http.Request) {
 	id, ok := canonicalTaskID(r.PathValue("id"))
 	if !ok {
-		writeErr(w, http.StatusBadRequest, "任务 id 无效")
+		writeErr(w, http.StatusBadRequest, "작업 ID가 유효하지 않습니다")
 		return
 	}
 	var opts DeleteTaskOptions
@@ -142,7 +142,7 @@ func (s *Server) pgDeleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !s.beginTaskDelete(id) {
-		writeErr(w, http.StatusConflict, "任务正在删除")
+		writeErr(w, http.StatusConflict, "작업을 삭제하는 중입니다")
 		return
 	}
 	deleted := false
@@ -158,7 +158,7 @@ func (s *Server) pgDeleteTask(w http.ResponseWriter, r *http.Request) {
 	drainCtx, cancelDrain := context.WithTimeout(r.Context(), taskDeleteDrainTimeout)
 	defer cancelDrain()
 	if err := s.waitTaskQuiescent(drainCtx, id); err != nil {
-		writeErr(w, http.StatusConflict, "任务仍有运行中的 Agent，删除已取消")
+		writeErr(w, http.StatusConflict, "실행 중인 Agent가 있어 작업 삭제를 취소했습니다")
 		return
 	}
 
@@ -255,15 +255,15 @@ func (s *Server) pgCreateAgent(w http.ResponseWriter, r *http.Request) {
 	}
 	req.Key, req.Name = strings.TrimSpace(req.Key), strings.TrimSpace(req.Name)
 	if !reAgentKey.MatchString(req.Key) {
-		writeErr(w, 400, "key 需小写字母开头，仅含小写字母/数字/下划线")
+		writeErr(w, 400, "key는 소문자로 시작하고 소문자, 숫자, 밑줄만 사용할 수 있습니다")
 		return
 	}
 	if req.Name == "" {
-		writeErr(w, 400, "名称不能为空")
+		writeErr(w, 400, "이름은 비워 둘 수 없습니다")
 		return
 	}
 	if exist, _ := pg.GetAgentByKey(req.Key); exist != nil {
-		writeErr(w, 409, "该 key 已存在")
+		writeErr(w, 409, "이미 존재하는 key입니다")
 		return
 	}
 	a, err := pg.CreateAgent(req.Key, req.Name, req.Description)
@@ -285,7 +285,7 @@ func (s *Server) pgUpdateAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.Builtin {
-		writeErr(w, 400, "内置 agent 不可修改名称/描述")
+		writeErr(w, 400, "내장 agent의 이름과 설명은 변경할 수 없습니다")
 		return
 	}
 	var req struct{ Name, Description string }
@@ -295,7 +295,7 @@ func (s *Server) pgUpdateAgent(w http.ResponseWriter, r *http.Request) {
 	}
 	req.Name = strings.TrimSpace(req.Name)
 	if req.Name == "" {
-		writeErr(w, 400, "名称不能为空")
+		writeErr(w, 400, "이름은 비워 둘 수 없습니다")
 		return
 	}
 	if err := pg.UpdateAgentMeta(a.Key, req.Name, req.Description); err != nil {
@@ -313,7 +313,7 @@ func (s *Server) pgDeleteAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.Builtin {
-		writeErr(w, 400, "内置 agent 不可删除")
+		writeErr(w, 400, "내장 agent는 삭제할 수 없습니다")
 		return
 	}
 	if err := pg.DeleteAgent(a.Key); err != nil {
@@ -376,12 +376,12 @@ func (s *Server) pgSaveAgentConfig(w http.ResponseWriter, r *http.Request) {
 	if req.LLMProfileID != nil { // key present (数字 或 null)
 		var id *int64
 		if err := json.Unmarshal(req.LLMProfileID, &id); err != nil {
-			writeErr(w, 400, "llm_profile_id 格式错误")
+			writeErr(w, 400, "llm_profile_id 형식이 잘못되었습니다")
 			return
 		}
 		if id != nil { // 绑定:校验目标 profile 有效
 			if _, ok := s.loadProfileConfig(*id); !ok {
-				writeErr(w, 400, "指定的 LLM 配置不存在或无效")
+				writeErr(w, 400, "지정한 LLM 설정이 없거나 유효하지 않습니다")
 				return
 			}
 		}
@@ -541,7 +541,7 @@ func (s *Server) pgResetPrompt(w http.ResponseWriter, r *http.Request) {
 	}
 	tmpl, has := agent.BuiltinPromptSeeds()[a.Key]
 	if !has {
-		writeErr(w, 400, "该 agent 无内置默认提示词，无法恢复")
+		writeErr(w, 400, "이 agent에는 복원할 내장 기본 프롬프트가 없습니다")
 		return
 	}
 	ver, err := pg.ResetPromptToDefault(a.ID, tmpl)
@@ -782,7 +782,7 @@ func (s *Server) pgUpdateTool(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if cur == nil {
-		writeErr(w, 404, "工具不存在: "+key)
+		writeErr(w, 404, "도구가 없습니다: "+key)
 		return
 	}
 	var body struct {
@@ -839,7 +839,7 @@ func (s *Server) pgResetTool(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, 200, map[string]any{"ok": true})
 		return
 	}
-	writeErr(w, 404, "非内置工具或不存在: "+key)
+	writeErr(w, 404, "내장 도구가 아니거나 존재하지 않습니다: "+key)
 }
 
 // ---------- mcp ----------
@@ -924,13 +924,13 @@ func (s *Server) pgRefreshMCP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if target == nil {
-		writeErr(w, 404, "MCP 不存在")
+		writeErr(w, 404, "MCP가 없습니다")
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 45*time.Second)
 	defer cancel()
 	if err := s.discoverAndCacheMCP(ctx, target); err != nil {
-		writeErr(w, 502, "工具发现失败："+err.Error())
+		writeErr(w, 502, "도구 검색 실패: "+err.Error())
 		return
 	}
 	tools, _ := pg.MCPToolsDetailed(id)
@@ -1033,7 +1033,7 @@ func (s *Server) fsSkillUsage(w http.ResponseWriter, r *http.Request) {
 	}
 	name := r.PathValue("name")
 	if !validSkillName(name) {
-		writeErr(w, 400, "非法 skill 名")
+		writeErr(w, 400, "skill 이름이 유효하지 않습니다")
 		return
 	}
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -1293,7 +1293,7 @@ func (s *Server) fsUploadSkill(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, maxSkillZipBytes)
 	file, hdr, err := r.FormFile("file")
 	if err != nil {
-		writeErr(w, 400, "缺少上传文件(表单字段 file)或超出大小限制")
+		writeErr(w, 400, "업로드 파일이 없거나 크기 제한을 초과했습니다(양식 필드: file)")
 		return
 	}
 	defer file.Close()
@@ -1326,7 +1326,7 @@ func (s *Server) fsUploadSkill(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if skillMD == nil {
-		writeErr(w, 400, "压缩包内未找到 SKILL.md")
+		writeErr(w, 400, "압축 파일에서 SKILL.md를 찾을 수 없습니다")
 		return
 	}
 	root := path.Dir(skillMD.name) // "." when SKILL.md is at the zip root
@@ -1338,7 +1338,7 @@ func (s *Server) fsUploadSkill(w http.ResponseWriter, r *http.Request) {
 	// derive + validate the skill name from the SKILL.md frontmatter.
 	md, err := readZipEntry(skillMD.f)
 	if err != nil {
-		writeErr(w, 400, "读取 SKILL.md 失败："+err.Error())
+		writeErr(w, 400, "SKILL.md 읽기 실패: "+err.Error())
 		return
 	}
 	name := skillNameFromFrontmatter(md)
@@ -1350,7 +1350,7 @@ func (s *Server) fsUploadSkill(w http.ResponseWriter, r *http.Request) {
 		name = strings.TrimSuffix(base, path.Ext(base))
 	}
 	if !validSkillName(name) {
-		writeErr(w, 400, "skill 名称无效（取自 SKILL.md 的 name 字段）："+name+
+		writeErr(w, 400, "skill 이름이 유효하지 않습니다(SKILL.md의 name 필드): "+name+
 			"（≤64 字符，字母开头，只能用小写字母/数字/连字符或中文等非 ASCII 字母，不能有空格、点、路径分隔符）")
 		return
 	}
@@ -1358,7 +1358,7 @@ func (s *Server) fsUploadSkill(w http.ResponseWriter, r *http.Request) {
 	skillPath := filepath.Join(s.skillDir, name)
 	overwrite := r.URL.Query().Get("overwrite") == "true"
 	if _, err := os.Stat(skillPath); err == nil && !overwrite {
-		writeErr(w, 409, "skill 已存在："+name+"（如需覆盖请确认后重试）")
+		writeErr(w, 409, "이미 존재하는 skill입니다: "+name+"(덮어쓰려면 확인 후 다시 시도하세요)")
 		return
 	}
 
@@ -1386,15 +1386,15 @@ func (s *Server) fsUploadSkill(w http.ResponseWriter, r *http.Request) {
 		}
 		clean, msg := skillRelPath(rel)
 		if msg != "" {
-			writeErr(w, 400, "压缩包含非法路径 "+e.name+"："+msg)
+			writeErr(w, 400, "압축 파일에 잘못된 경로가 포함되어 있습니다: "+e.name+"："+msg)
 			return
 		}
 		if entries++; entries > maxSkillEntries {
-			writeErr(w, 400, "压缩包文件过多")
+			writeErr(w, 400, "압축 파일의 항목이 너무 많습니다")
 			return
 		}
 		if f.UncompressedSize64 > maxSkillFileBytes {
-			writeErr(w, 400, "文件过大："+rel)
+			writeErr(w, 400, "파일이 너무 큽니다: "+rel)
 			return
 		}
 		dst := filepath.Join(tmp, clean)
@@ -1422,12 +1422,12 @@ func (s *Server) fsUploadSkill(w http.ResponseWriter, r *http.Request) {
 		}
 		total += n
 		if total > maxSkillTotalBytes {
-			writeErr(w, 400, "压缩包解压后过大")
+			writeErr(w, 400, "압축 해제 후 파일 크기가 제한을 초과합니다")
 			return
 		}
 	}
 	if _, err := os.Stat(filepath.Join(tmp, "SKILL.md")); err != nil {
-		writeErr(w, 400, "解压后缺少 SKILL.md")
+		writeErr(w, 400, "압축 해제 후 SKILL.md가 없습니다")
 		return
 	}
 
@@ -1435,7 +1435,7 @@ func (s *Server) fsUploadSkill(w http.ResponseWriter, r *http.Request) {
 		_ = os.RemoveAll(skillPath)
 	}
 	if err := os.Rename(tmp, skillPath); err != nil {
-		writeErr(w, 500, "安装失败："+err.Error())
+		writeErr(w, 500, "설치 실패: "+err.Error())
 		return
 	}
 	writeJSON(w, 201, map[string]any{"name": name, "files": entries})
@@ -1876,11 +1876,11 @@ func (s *Server) pgDeleteProfile(w http.ResponseWriter, r *http.Request) {
 	if err := pg.DeleteProfileContext(r.Context(), id); err != nil {
 		switch {
 		case errors.Is(err, db.ErrActiveLLMProfileDelete):
-			writeErr(w, 409, "当前激活的 LLM 配置不能删除，请先激活其他配置")
+			writeErr(w, 409, "현재 활성화된 LLM 설정은 삭제할 수 없습니다. 먼저 다른 설정을 활성화하세요")
 		case errors.Is(err, db.ErrLLMProfileReferencesChanged):
-			writeErr(w, 409, "LLM 配置正在被任务或会话修改，请重试")
+			writeErr(w, 409, "작업 또는 세션에서 LLM 설정을 변경 중입니다. 다시 시도하세요")
 		case errors.Is(err, context.DeadlineExceeded):
-			writeErr(w, 409, "等待 LLM 配置引用释放超时，请重试")
+			writeErr(w, 409, "LLM 설정 참조 해제 대기 시간이 초과되었습니다. 다시 시도하세요")
 		case errors.Is(err, db.ErrLLMProfileNotFound):
 			writeErr(w, 404, err.Error())
 		default:

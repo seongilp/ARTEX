@@ -127,7 +127,7 @@ export async function http<T>(path: string, init?: RequestInit): Promise<T> {
       document.cookie = "artex_token=; path=/; max-age=0";
       window.location.href = "/login";
     }
-    throw new Error("未授权");
+    throw new Error("승인되지 않음");
   }
   if (!r.ok) {
     const fallback = `${init?.method ?? "GET"} ${path}: ${r.status}`;
@@ -156,25 +156,7 @@ export async function http<T>(path: string, init?: RequestInit): Promise<T> {
 // browser does not send cookies cross-port.
 // mockReport returns a canned Markdown report for the demo.
 function mockReport(_task?: string): string {
-  return `# ARTEX 渗透测试报告 — Acme Corp
-
-## 概览
-- 范围：acme.com（含 www / admin / api / shop / vpn 子域）
-- 已确认发现：6 项（高危 3 · 中危 3 · 低危 2）
-- 引擎模式：exploring
-
-## 关键发现
-1. **[高] 后台默认口令** admin.acme.com admin/admin123 → 可完全接管后台。
-2. **[高] SQL 注入** www.acme.com/search?q= → 可读取 acme_prod 库。
-3. **[高] IDOR** api.acme.com/v1/orders?id= → 可越权读取他人订单（含手机号/地址）。
-4. **[中] 反射型 XSS**、**暴露 .git 源码**、**登录无速率限制**。
-
-## 建议
-- 后台强制改密 + 启用 MFA、封禁默认口令。
-- search 接口参数化查询、输出编码。
-- API 增加对象级授权校验（IDOR）、更换强 JWT 密钥。
-
-> （demo）本报告由 mock 数据生成，仅用于界面演示。`;
+  return `# ARTEX 침투 테스트 보고서 — Acme Corp\n\n## 개요\n- 범위: acme.com (www / admin / api / shop / vpn 하위 도메인 포함)\n- 확인된 발견 사항: 6건 (높음 3 · 중간 3 · 낮음 2)\n- 엔진 모드: 탐색 중\n\n## 주요 발견 사항\n1. **[높음] 관리자 기본 비밀번호** admin.acme.com admin/admin123 → 관리자 페이지를 완전히 장악할 수 있습니다.\n2. **[높음] SQL 인젝션** www.acme.com/search?q= → acme_prod 데이터베이스를 읽을 수 있습니다.\n3. **[높음] IDOR** api.acme.com/v1/orders?id= → 다른 사람의 주문(전화번호/주소 포함)을 무단으로 읽을 수 있습니다.\n4. **[중간] 반사형 XSS**, **.git 소스 노출**, **로그인 시도 횟수 제한 없음**.\n\n## 권고 사항\n- 관리자 비밀번호를 강제로 변경하고 MFA를 활성화하며 기본 비밀번호를 차단하세요.\n- search 인터페이스에서 매개변수화 쿼리와 출력 인코딩을 적용하세요.\n- API에 객체 수준 권한 검사를 추가하고(IDOR 방지), 강력한 JWT 키로 교체하세요.\n\n> (데모) 이 보고서는 화면 시연용 모의 데이터로 생성되었습니다.`;
 }
 
 export function sseUrl(path: string): string {
@@ -437,19 +419,19 @@ export const api = {
       headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: fd,
     });
-    if (!r.ok) throw new Error(`上传失败: ${r.status}`);
+    if (!r.ok) throw new Error(`업로드 실패: ${r.status}`);
     return r.json() as Promise<{ uploaded: number }>;
   },
   workspaceDownload: async (path: string) => {
     let blob: Blob;
     if (MOCK) {
-      blob = new Blob([`（demo）${path} 的下载内容示例。`], { type: "text/plain" });
+      blob = new Blob([`（demo）${path}의 다운로드 콘텐츠 예시입니다.`], { type: "text/plain" });
     } else {
       const token = getToken();
       const r = await fetch(`/api/workspace/download?path=${encodeURIComponent(path)}`, {
         headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       });
-      if (!r.ok) throw new Error(`下载失败: ${r.status}`);
+      if (!r.ok) throw new Error(`다운로드 실패: ${r.status}`);
       blob = await r.blob();
     }
     const objUrl = URL.createObjectURL(blob);
@@ -638,8 +620,8 @@ export const api = {
       { headers: token ? { Authorization: `Bearer ${token}` } : {} },
     );
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: "下载失败" }));
-      throw new Error(error.error ?? "下载失败");
+      const error = await response.json().catch(() => ({ error: "다운로드 실패" }));
+      throw new Error(error.error ?? "다운로드 실패");
     }
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
@@ -888,7 +870,7 @@ export const api = {
       headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: fd,
     });
-    if (!r.ok) throw new Error(`上传失败: ${r.status} ${await r.text()}`);
+    if (!r.ok) throw new Error(`업로드 실패: ${r.status} ${await r.text()}`);
     return r.json() as Promise<{ attachments: ChatAttachment[] }>;
   },
   stopChat: (taskId: string) => post<{ status: string }>(`/tasks/${taskId}/chat/stop`, {}),
@@ -1149,7 +1131,7 @@ export const api = {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     const body = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(body?.error || `上传失败(${r.status})`);
+    if (!r.ok) throw new Error(body?.error || `업로드 실패(${r.status})`);
     return body;
   },
   deleteSkill: (name: string) => del<{ deleted: string }>(`/skills/${name}`),

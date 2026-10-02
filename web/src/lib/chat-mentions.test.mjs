@@ -25,7 +25,15 @@ test("tokens roundtrip labels and removing one reference preserves its neighbors
   const value = `分析 ${first} 和 ${second}`;
   const selected = selectedMentions(value);
   assert.equal(selected.length, 2);
-  assert.equal(selected[0].label, "漏洞 #12 · 标题（1） 描述");
+  assert.equal(selected[0].label, "취약점 #12 · 标题（1） 描述");
   const next = value.slice(0, selected[0].start) + value.slice(selected[0].start + selected[0].token.length);
   assert.equal(selectedMentions(next)[0].token, second);
+});
+
+test("Korean mention search and tokens preserve legacy Chinese references", () => {
+  assert.equal(mentionSearch("취").categories[0].kind, "finding");
+  assert.equal(mentionSearch("취약점 SQL").query, "SQL");
+  assert.equal(mentionSearch("하위 도메인 example.com").kind, "subdomain");
+  const value = "@[취약점#1 새 기록] @[漏洞#2 이전 기록] @[하위 도메인#3 example.com]";
+  assert.equal(selectedMentions(value).length, 3);
 });

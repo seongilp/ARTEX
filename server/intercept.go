@@ -356,7 +356,7 @@ func (s *Server) interceptDecide(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Decision != "allowed" && req.Decision != "denied" {
-		writeErr(w, 400, "decision 必须是 allowed 或 denied")
+		writeErr(w, 400, "decision은 allowed 또는 denied여야 합니다")
 		return
 	}
 	if err := s.m.interceptor.Decide(id, req.Decision == "allowed"); err != nil {
@@ -421,13 +421,13 @@ func (s *Server) interceptSetJudgeConfig(w http.ResponseWriter, r *http.Request)
 	switch req.FailAction {
 	case "allow", "ask", "deny":
 	default:
-		writeErr(w, 400, "fail_action 必须是 allow、ask 或 deny")
+		writeErr(w, 400, "fail_action은 allow, ask 또는 deny여야 합니다")
 		return
 	}
 	switch req.AskTimeoutAction {
 	case "allow", "deny":
 	default:
-		writeErr(w, 400, "ask_timeout_action 必须是 allow 或 deny")
+		writeErr(w, 400, "ask_timeout_action은 allow 또는 deny여야 합니다")
 		return
 	}
 	if err := s.m.interceptor.SetJudgeConfig(req); err != nil {
@@ -540,11 +540,11 @@ func (s *Server) interceptExecution(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			if conv == nil {
-				writeErr(w, http.StatusGone, "对话已被删除")
+				writeErr(w, http.StatusGone, "대화가 삭제되었습니다")
 				return
 			}
 		}
-		writeErr(w, 404, "审批记录已被删除或不存在")
+		writeErr(w, 404, "승인 기록이 삭제되었거나 존재하지 않습니다")
 		return
 	}
 	writeJSON(w, 200, map[string]any{"conversation_id": target.ConversationID, "task_id": target.TaskID, "session": target.Session, "seq": target.Seq, "items": activityDTOs(target.Items)})
