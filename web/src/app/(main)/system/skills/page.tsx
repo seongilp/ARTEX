@@ -342,17 +342,17 @@ export default function SkillsPage() {
 
   // ── Data ──────────────────────────────────────────────────────────────────
   const load = React.useCallback(() => {
-    api.agents().then(setAgents).catch(() => {});
-    api.mcpServers().then(setMcpOptions).catch(() => {});
-    api.missingSkills().then(setMissing).catch(() => {});
+    api.agents().then(setAgents).catch((error: unknown) => { toast.error(error instanceof Error ? error.message : "요청을 처리하지 못했습니다."); });
+    api.mcpServers().then(setMcpOptions).catch((error: unknown) => { toast.error(error instanceof Error ? error.message : "요청을 처리하지 못했습니다."); });
+    api.missingSkills().then(setMissing).catch((error: unknown) => { toast.error(error instanceof Error ? error.message : "요청을 처리하지 못했습니다."); });
     api.skills().then((ss) => {
       setSkills(ss);
       ss.forEach((s) =>
-        api.skillVisibility(s.name)
+        { api.skillVisibility(s.name)
           .then((ids) => setVisibility((v) => ({ ...v, [s.name]: ids })))
-          .catch(() => {}),
+          .catch((error: unknown) => { toast.error(error instanceof Error ? error.message : "요청을 처리하지 못했습니다."); }); },
       );
-    }).catch(() => {});
+    }).catch((error: unknown) => { toast.error(error instanceof Error ? error.message : "요청을 처리하지 못했습니다."); });
   }, []);
 
   React.useEffect(() => { load(); }, [load]);
@@ -382,7 +382,7 @@ export default function SkillsPage() {
   function onUploadPick(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     e.target.value = ""; // reset so picking the same file again re-fires
-    if (f) uploadZip(f);
+    if (f) void uploadZip(f);
   }
 
   React.useEffect(() => {
@@ -632,16 +632,17 @@ export default function SkillsPage() {
             <div
               className="group relative flex cursor-pointer select-none items-center gap-1 rounded py-0.5 pr-1 text-sm hover:bg-muted"
               style={{ paddingLeft: baseIndent }}
-              onClick={() => toggleExpanded(key)}
             >
+              <button type="button" className="flex min-w-0 flex-1 items-center gap-1 rounded text-left focus-visible:outline-2 focus-visible:outline-ring" aria-expanded={open} onClick={() => toggleExpanded(key)}>
               <ChevronRightIcon className={cn("size-3.5 shrink-0 transition-transform", open && "rotate-90")} />
               {open
                 ? <FolderOpenIcon className="size-3.5 shrink-0 text-amber-500" />
                 : <FolderIcon className="size-3.5 shrink-0 text-amber-500" />
               }
               <span className="min-w-0 flex-1 truncate" title={node.path}>{node.name}</span>
+              </button>
               {/* Absolute so a long name can never push the actions out of view */}
-              <span className="absolute inset-y-0 right-1 hidden items-center gap-0.5 rounded bg-muted pl-1 group-hover:flex">
+              <span className="absolute inset-y-0 right-1 hidden items-center gap-0.5 rounded bg-muted pl-1 group-hover:flex group-focus-within:flex">
                 <Button size="icon" variant="ghost" className="size-5" title="새 파일"
                   onClick={(e) => { e.stopPropagation(); startCreate(skill, node.path, "file"); }}>
                   <FilePlusIcon className="size-3 text-muted-foreground" />
@@ -677,12 +678,13 @@ export default function SkillsPage() {
             isSelected ? "bg-accent text-accent-foreground" : "hover:bg-muted",
           )}
           style={{ paddingLeft: baseIndent + 16 }}
-          onClick={() => setSelected({ skill, path: node.path })}
         >
+          <button type="button" className="flex min-w-0 flex-1 items-center gap-1 rounded text-left focus-visible:outline-2 focus-visible:outline-ring" onClick={() => setSelected({ skill, path: node.path })}>
           <FileTextIcon className="size-3.5 shrink-0 text-muted-foreground" />
           <span className="min-w-0 flex-1 truncate font-mono text-xs" title={node.path}>{node.name}</span>
+          </button>
           <span className={cn(
-            "absolute inset-y-0 right-1 hidden items-center rounded pl-1 group-hover:flex",
+            "absolute inset-y-0 right-1 hidden items-center rounded pl-1 group-hover:flex group-focus-within:flex",
             isSelected ? "bg-accent" : "bg-muted",
           )}>
             <Button size="icon" variant="ghost" className="size-5"
@@ -776,7 +778,8 @@ export default function SkillsPage() {
                         "group relative flex cursor-pointer select-none items-center gap-1 rounded px-2 py-1 text-sm",
                         isSkillSelected ? "bg-accent text-accent-foreground" : "hover:bg-muted",
                       )}
-                      onClick={() => {
+                    >
+                      <button type="button" className="flex min-w-0 flex-1 items-center gap-1 rounded text-left focus-visible:outline-2 focus-visible:outline-ring" aria-expanded={isOpen} onClick={() => {
                         toggleExpanded(s.name);
                         setSelected({ skill: s.name, path: null });
                       }}
@@ -787,6 +790,7 @@ export default function SkillsPage() {
                         : <FolderIcon className="size-3.5 shrink-0 text-blue-500" />
                       }
                       <span className="min-w-0 flex-1 truncate font-semibold" title={s.name}>{s.name}</span>
+                      </button>
                       {s.calls > 0 && (
                         <span
                           className="shrink-0 rounded bg-muted px-1 text-[10px] tabular-nums text-muted-foreground"
@@ -796,7 +800,7 @@ export default function SkillsPage() {
                         </span>
                       )}
                       <span className={cn(
-                        "absolute inset-y-0 right-1 hidden items-center gap-0.5 rounded pl-1 group-hover:flex",
+                        "absolute inset-y-0 right-1 hidden items-center gap-0.5 rounded pl-1 group-hover:flex group-focus-within:flex",
                         isSkillSelected ? "bg-accent" : "bg-muted",
                       )}>
                         <Button size="icon" variant="ghost" className="size-5" title="새 파일"

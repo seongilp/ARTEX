@@ -126,7 +126,7 @@ export default function LogsPage() {
   }, [lines, q, level]);
 
   React.useEffect(() => {
-    if (stick.current && !paused) bottom.current?.scrollIntoView();
+    if (filtered.length > 0 && stick.current && !paused) bottom.current?.scrollIntoView();
   }, [filtered, paused]);
 
   const counts = React.useMemo(() => {

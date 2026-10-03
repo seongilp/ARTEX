@@ -524,6 +524,8 @@ func (t *ToolSet) graphOverviewData() map[string]any {
 	if t.as != nil && t.ts != nil && t.taskID > 0 {
 		{
 			m := map[string]any{}
+			// Keep the task's actual scope available even when coverage metrics are off.
+			m["scope"] = t.taskScopeOverview()
 			if !t.coverageDisabled {
 				if cov, err := t.as.TaskCoverageWithSources(t.taskID); err == nil {
 					m["denominator"] = cov.Denominator

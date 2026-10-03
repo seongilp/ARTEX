@@ -58,19 +58,19 @@ export default function MCPPage() {
   const [refreshing, setRefreshing] = React.useState(false);
 
   const load = React.useCallback(() => {
-    api.agents().then(setAgents).catch(() => {});
+    api.agents().then(setAgents).catch((error: unknown) => { toast.error(error instanceof Error ? error.message : "요청을 처리하지 못했습니다."); });
     api
       .mcpServers()
       .then((ss) => {
         setServers(ss);
         ss.forEach((s) =>
-          api
+          { api
             .resourceVisibility("mcp", s.id)
             .then((ids) => setVisibility((v) => ({ ...v, [s.id]: ids })))
-            .catch(() => {}),
+            .catch((error: unknown) => { toast.error(error instanceof Error ? error.message : "요청을 처리하지 못했습니다."); }); },
         );
       })
-      .catch(() => {});
+      .catch((error: unknown) => { toast.error(error instanceof Error ? error.message : "요청을 처리하지 못했습니다."); });
   }, []);
   React.useEffect(() => {
     load();
@@ -120,7 +120,7 @@ export default function MCPPage() {
     });
     setTab("config");
     setOpen(true);
-    loadTools(s.id);
+    void loadTools(s.id);
   }
 
   async function loadTools(id: number) {
@@ -379,17 +379,16 @@ export default function MCPPage() {
         {servers.map((s) => (
           <Card
             key={s.id}
-            onClick={() => openEdit(s)}
             className="hover:border-primary/60 cursor-pointer gap-3 transition hover:shadow-sm"
           >
             <CardHeader>
               <div className="flex items-center gap-2">
                 <ServerIcon className="text-muted-foreground size-4 shrink-0" />
-                <CardTitle className="truncate text-base">{s.name}</CardTitle>
+                <CardTitle className="truncate text-base"><button type="button" className="rounded text-left focus-visible:outline-2 focus-visible:outline-ring" onClick={() => openEdit(s)}>{s.name}</button></CardTitle>
                 <Badge variant="outline" className="uppercase">
                   {s.transport}
                 </Badge>
-                <div className="ml-auto flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                <div className="ml-auto flex items-center gap-2">
                   <Switch
                     checked={s.enabled}
                     onCheckedChange={() => toggleEnabled(s)}
@@ -410,7 +409,7 @@ export default function MCPPage() {
               <p className="text-muted-foreground text-sm">
                 {s.tools && s.tools.length > 0 ? `${s.tools.length}개 발견` : "도구를 찾지 못했습니다."}
               </p>
-              <div className="grid gap-2" onClick={(e) => e.stopPropagation()}>
+              <div className="grid gap-2">
                 <span className="text-muted-foreground text-xs">표시 여부(Agent별 권한 설정)</span>
                 <div className="flex flex-wrap gap-x-4 gap-y-2">
                   {agents.map((a) => (

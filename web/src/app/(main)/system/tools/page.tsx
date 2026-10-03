@@ -375,8 +375,8 @@ export default function ToolsPage() {
   }, []);
   React.useEffect(() => {
     reload();
-    api.agents().then(setAgents).catch(() => {});
-    api.settings().then((s) => setCaptureOn(!!s.traffic_capture)).catch(() => {});
+    api.agents().then(setAgents).catch((error: unknown) => { toast.error(error instanceof Error ? error.message : "요청을 처리하지 못했습니다."); });
+    api.settings().then((s) => setCaptureOn(!!s.traffic_capture)).catch((error: unknown) => { toast.error(error instanceof Error ? error.message : "요청을 처리하지 못했습니다."); });
   }, [reload]);
 
   const [query, setQuery] = React.useState("");

@@ -269,10 +269,30 @@ CGO_ENABLED=0 go build -tags embedui -o artex ./cmd/artex
 
 - 백엔드: `go run ./cmd/artex` (`-tags embedui`가 없으면 프런트엔드가 포함되지 않습니다.)
 - 프런트엔드: `cd web && npm run dev` (`/api`가 백엔드로 프록시되며 핫 리로드를 지원합니다.)
-- 테스트: `go test ./...`
+- DB 통합 테스트: `./scripts/test-integration.sh` (Docker 필요, 임시 DB 자동 생성·삭제)
 - 백엔드 없는 모의 미리보기: `cd web && NEXT_PUBLIC_MOCK=1 npm run dev`
 
 ---
+
+## 검증 및 DB 통합 테스트
+
+Docker가 실행 중인 환경에서 다음 명령으로 전체 Go 테스트를 실행합니다.
+
+```bash
+./scripts/test-integration.sh
+# 특정 테스트만 다시 실행
+./scripts/test-integration.sh -run TestChatMention
+```
+
+스크립트는 PostgreSQL 16 테스트 컨테이너를 localhost의 임시 포트에 띄우고, **Go 패키지마다 별도의 빈 DB**를 만듭니다. 기존 `config.json`이나 `ARTEX_PG_DSN`의 운영 DB를 사용하지 않습니다. 테스트가 끝나거나 중단되면 컨테이너와 임시 데이터를 삭제합니다. Docker, Go, OpenSSL이 필요하며 실제 LLM을 사용하는 선택 테스트는 별도 키 없이는 건너뜁니다.
+
+```bash
+cd web
+npm ci
+npm run lint
+node --test src/lib/activity-merge.test.mjs src/lib/chat-mentions.test.mjs
+npm run build:static
+```
 
 ## 시스템 아키텍처
 

@@ -5,6 +5,7 @@ import * as React from "react";
 import { ExplorationGraph } from "@/components/exploration-graph";
 import { api } from "@/lib/api";
 import type { Edge, TaskNode } from "@/lib/types";
+import { toast } from "sonner";
 
 // FindingLineageView renders the exploration sub-graph from the task's initial
 // node down to this finding's node — the same 攻击链路图 canvas as the task graph,
@@ -23,7 +24,7 @@ export function FindingLineageView({ findingId }: { findingId: string }) {
         setNodes(g.nodes ?? []);
         setEdges(g.edges ?? []);
       })
-      .catch(() => {})
+      .catch((error: unknown) => { toast.error(error instanceof Error ? error.message : "요청을 처리하지 못했습니다."); })
       .finally(() => {
         if (alive) setLoaded(true);
       });
